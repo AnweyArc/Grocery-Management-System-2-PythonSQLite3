@@ -300,7 +300,7 @@ class GroceryManagementSystem:
                 item_name = item[0]
                 item_price = item[1]  # corrected index for price
                 item_quantity = item[2]  # corrected index for quantity
-                self.info_listbox.insert(tk.END, f"Item Name: {item_name}\nItem Price: {item_price}\nQuantity Left: {item_quantity}")
+                self.info_listbox.insert(tk.END, f"Item Name: {item_name}\n Item Price: {item_price}\n Quantity Left: {item_quantity}")
         else:
             self.info_listbox.insert(tk.END, "No items on the inventory!")
 
@@ -308,7 +308,8 @@ class GroceryManagementSystem:
     def clear_inventory(self):
         # Functionality for Clear Inventory button
         self.db_manager.clear_inventory()
-        self.item_prices_listbox.delete(0, tk.END)  # Clear the listbox
+        self.info_listbox.delete(0, tk.END)  # Clear the listbox
+        self.info_listbox.insert(tk.END, "Inventory Cleared!")
 
     def view_database(self):
         # Functionality for View Database button
