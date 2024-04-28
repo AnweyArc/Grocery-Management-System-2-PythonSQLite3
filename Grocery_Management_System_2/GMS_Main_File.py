@@ -56,22 +56,6 @@ class DatabaseManager:
         except sqlite3.Error as e:
             print("Error clearing inventory:", e)
 
-    # Store Database methods
-    def view_sales(self):
-        try:
-            self.cursor.execute("SELECT * FROM sales")
-            return self.cursor.fetchall()
-        except sqlite3.Error as e:
-            print("Error viewing sales:", e)
-            return []
-
-    def clear_sales(self):
-        try:
-            self.cursor.execute("DELETE FROM sales")
-            self.conn.commit()
-        except sqlite3.Error as e:
-            print("Error clearing sales:", e)
-
     # Edit Items
     def edit_item(self, item_id, new_name, new_quantity, new_price):
         try:
@@ -169,14 +153,6 @@ class GroceryManagementSystem:
         # Clear Inventory Button
         clear_inventory_button = tk.Button(inventory_window, text="Clear Inventory", bg=self.button_color, fg=self.text_color_white, font=("Arial", 10, "bold"), command=self.clear_inventory)
         clear_inventory_button.place(x=50, y=250, width=130, height=40)
-
-        # View Database Button
-        view_database_button = tk.Button(inventory_window, text="View Database", bg=self.button_color, fg=self.text_color_white, font=("Arial", 10, "bold"), command=self.view_database)
-        view_database_button.place(x=50, y=300, width=130, height=40)
-
-        # Clear Database Button
-        clear_database_button = tk.Button(inventory_window, text="Clear Database", bg=self.button_color, fg=self.text_color_white, font=("Arial", 10, "bold"), command=self.clear_database)
-        clear_database_button.place(x=50, y=350, width=130, height=40)
 
         # Listbox on the right side
         self.info_listbox = tk.Listbox(inventory_window, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
@@ -310,25 +286,6 @@ class GroceryManagementSystem:
         self.db_manager.clear_inventory()
         self.info_listbox.delete(0, tk.END)  # Clear the listbox
         self.info_listbox.insert(tk.END, "Inventory Cleared!")
-
-    def view_database(self):
-        # Functionality for View Database button
-        self.info_listbox.delete(0, tk.END)  # Clear the listbox
-        database_items = self.db_manager.view_sales()
-        for item in database_items:
-            item_id = item[1]
-            item_quantity_sold = item[2]
-            sale_date = item[3]
-            item_details = self.db_manager.get_item_by_id(item_id)
-            if item_details:
-                item_name = item_details[1]
-                item_price = item_details[3]
-                self.info_listbox.insert(tk.END, f"Item Name: {item_name}  Item Price: {item_price}  Quantity Sold: {item_quantity_sold}  Sale Date: {sale_date}")
-
-    def clear_database(self):
-        # Functionality for Clear Database button
-        self.db_manager.clear_sales()
-        self.info_listbox.delete(0, tk.END)  # Clear the listbox
 
 def main():
     # Main function to initialize the application
