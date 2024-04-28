@@ -56,22 +56,12 @@ class DatabaseManager:
         except sqlite3.Error as e:
             print("Error clearing inventory:", e)
 
-    # Edit Items
-    def edit_item(self, item_id, new_name, new_quantity, new_price):
+    def delete_item(self, item_name):
         try:
-            self.cursor.execute("UPDATE inventory SET name=?, quantity=?, price=? WHERE id=?",
-                                (new_name, new_quantity, new_price, item_id))
+            self.cursor.execute("DELETE FROM inventory WHERE name=?", (item_name,))
             self.conn.commit()
         except sqlite3.Error as e:
-            print("Error editing item:", e)
-
-    def get_item_by_name(self, item_name):
-        try:
-            self.cursor.execute("SELECT * FROM inventory WHERE name=?", (item_name,))
-            return self.cursor.fetchone()
-        except sqlite3.Error as e:
-            print("Error getting item by name:", e)
-            return None
+            print("Error deleting item:", e)
 
     def __del__(self):
         self.conn.close()
@@ -142,17 +132,21 @@ class GroceryManagementSystem:
         add_items_button = tk.Button(inventory_window, text="Add Items", bg=self.button_color, fg=self.text_color_white, font=("Arial", 10, "bold"), command=self.add_items)
         add_items_button.place(x=50, y=100, width=130, height=40)
 
+        # Delete Item Button
+        delete_item_button = tk.Button(inventory_window, text="Delete an Item", bg=self.button_color, fg=self.text_color_white, font=("Arial", 10, "bold"), command=self.delete_item_window)
+        delete_item_button.place(x=50, y=150, width=130, height=40)  # Adjusted y-coordinate
+
         # Edit Items Button
         edit_items_button = tk.Button(inventory_window, text="Edit Items", bg=self.button_color, fg=self.text_color_white, font=("Arial", 10, "bold"), command=self.edit_items)
-        edit_items_button.place(x=50, y=150, width=130, height=40)
+        edit_items_button.place(x=50, y=200, width=130, height=40)  # Adjusted y-coordinate
 
         # View Inventory Button
         view_inventory_button = tk.Button(inventory_window, text="View Inventory", bg=self.button_color, fg=self.text_color_white, font=("Arial", 10, "bold"), command=self.view_inventory)
-        view_inventory_button.place(x=50, y=200, width=130, height=40)
+        view_inventory_button.place(x=50, y=250, width=130, height=40)
 
         # Clear Inventory Button
         clear_inventory_button = tk.Button(inventory_window, text="Clear Inventory", bg=self.button_color, fg=self.text_color_white, font=("Arial", 10, "bold"), command=self.clear_inventory)
-        clear_inventory_button.place(x=50, y=250, width=130, height=40)
+        clear_inventory_button.place(x=50, y=300, width=130, height=40)
 
         # Listbox on the right side
         self.info_listbox = tk.Listbox(inventory_window, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
@@ -222,6 +216,28 @@ class GroceryManagementSystem:
         add_existing_item_button = tk.Button(existing_item_frame, text="Add Existing Item", command=add_existing_item_to_database)
         add_existing_item_button.grid(row=2, column=0, columnspan=2, pady=10)
 
+    def delete_item_window(self):
+        # Functionality for Delete an Item button
+        delete_window = tk.Toplevel(self.master)
+        delete_window.title("Delete Item")
+
+        delete_item_frame = tk.LabelFrame(delete_window, text="Delete Item")
+        delete_item_frame.grid(row=0, column=0, padx=10, pady=5, sticky="ew")
+
+        delete_item_name_label = tk.Label(delete_item_frame, text="Item Name:")
+        delete_item_name_label.grid(row=0, column=0, padx=10, pady=5, sticky="e")
+        delete_item_name_entry = tk.Entry(delete_item_frame)
+        delete_item_name_entry.grid(row=0, column=1, padx=10, pady=5)
+
+        def delete_item_from_database():
+            item_name = delete_item_name_entry.get()
+            self.db_manager.delete_item(item_name)
+            delete_window.destroy()
+            # Refresh the inventory view
+            self.view_inventory()
+
+        delete_item_button = tk.Button(delete_item_frame, text="Delete Item", command=delete_item_from_database)
+        delete_item_button.grid(row=1, column=0, columnspan=2, pady=10)
 
     def edit_items(self):
         # Functionality for Edit Items button
@@ -266,7 +282,6 @@ class GroceryManagementSystem:
         apply_button = tk.Button(edit_window, text="Apply Edit", command=apply_edit)
         apply_button.grid(row=4, column=0, columnspan=2, pady=10)
 
-
     def view_inventory(self):
         # Functionality for View Inventory button
         self.info_listbox.delete(0, tk.END)  # Clear the listbox
@@ -280,12 +295,12 @@ class GroceryManagementSystem:
         else:
             self.info_listbox.insert(tk.END, "No items on the inventory!")
 
-
     def clear_inventory(self):
         # Functionality for Clear Inventory button
         self.db_manager.clear_inventory()
         self.info_listbox.delete(0, tk.END)  # Clear the listbox
         self.info_listbox.insert(tk.END, "Inventory Cleared!")
+
 
 def main():
     # Main function to initialize the application
