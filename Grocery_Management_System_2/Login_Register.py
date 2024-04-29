@@ -9,19 +9,47 @@ class DatabaseManager:
         self.create_tables()
 
     def create_tables(self):
-        # Create table for user information
-        self.cursor.execute("""CREATE TABLE IF NOT EXISTS users (
-                                id INTEGER PRIMARY KEY,
-                                username TEXT UNIQUE,
-                                password TEXT
-                            )""")
-        self.conn.commit()
+        try:
+            # Create tables for store inventory, sales, and users
+            self.cursor.execute("""CREATE TABLE IF NOT EXISTS inventory (
+                                    id INTEGER PRIMARY KEY,
+                                    name TEXT,
+                                    quantity INTEGER,
+                                    price REAL
+                                )""")
+
+            self.cursor.execute("""CREATE TABLE IF NOT EXISTS sales (
+                                    id INTEGER PRIMARY KEY,
+                                    item_id INTEGER,
+                                    item_name TEXT,
+                                    quantity_sold INTEGER,
+                                    sale_date TEXT,
+                                    FOREIGN KEY (item_id) REFERENCES inventory(id)
+                                )""")  
+
+            self.cursor.execute("""CREATE TABLE IF NOT EXISTS users (
+                                    id INTEGER PRIMARY KEY,
+                                    username TEXT UNIQUE,
+                                    password TEXT,
+                                    role TEXT
+                                )""")  
+            # Check if the users table is empty
+            self.cursor.execute("SELECT COUNT(*) FROM users")
+            count = self.cursor.fetchone()[0]
+            if count == 0:
+                # If the table is empty, set the first user as admin
+                self.cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
+                                    ("admin", "admin", "Admin"))
+                self.conn.commit()  # Commit the changes
+        except sqlite3.Error as e:
+            print("Error creating tables:", e)
 
     # User Management methods
     def register_user(self, username, password):
         try:
-            self.cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)",
-                                (username, password))
+            # Set the role for subsequent users as "User"
+            self.cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
+                                (username, password, "User"))
             self.conn.commit()
             messagebox.showinfo("Success", "User registered successfully.")
         except sqlite3.Error as e:
@@ -33,9 +61,9 @@ class DatabaseManager:
                                 (username, password))
             user = self.cursor.fetchone()
             if user:
-                messagebox.showinfo("Success", "Login successful.")
+                return user  # Return the user information
             else:
-                messagebox.showerror("Error", "Invalid username or password.")
+                return None  # Return None if user not found
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Error logging in: {e}")
 
@@ -83,7 +111,16 @@ class UserManagementSystem:
         # Functionality for user login
         username = self.username_entry.get()
         password = self.password_entry.get()
-        self.db_manager.login_user(username, password)
+        user = self.db_manager.login_user(username, password)
+        if user:
+            if user[3] == "Admin":  # Check if the user role is Admin
+                messagebox.showinfo("Success", "Login successful as admin.")
+                open_main_file()  # Open the admin file
+            else:
+                messagebox.showinfo("Success", "Login successful as regular user.")
+                open_sell_items_file()  # Open the user file
+        else:
+            messagebox.showerror("Error", "Invalid username or password.")
 
     def register(self):
         # Functionality for user registration
