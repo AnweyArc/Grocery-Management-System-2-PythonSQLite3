@@ -89,12 +89,15 @@ class GroceryManagementSystem:
         self.store_inventory_button = tk.Button(self.master, text="Store Inventory", bg=self.button_color, fg=self.text_color_white, font=("Arial", 12, "bold"), command=self.open_inventory_window)
         self.store_inventory_button.place(x=325, y=100, width=150, height=30)
 
+        self.show_items_button = tk.Button(self.master, text="Show Items", bg=self.button_color, fg=self.text_color_white, font=("Arial", 12, "bold"), command=self.show_items)
+        self.show_items_button.place(x=325, y=150, width=150, height=30)
+
         self.item_prices_label = tk.Label(self.master, text="Item Prices", bg=self.bg_color, fg=self.text_color, font=("Arial", 12, "bold"))
-        self.item_prices_label.place(x=356, y=140)
+        self.item_prices_label.place(x=356, y=190)
         self.item_prices_entry = tk.Entry(self.master, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        self.item_prices_entry.place(x=330, y=170, width=140)
+        self.item_prices_entry.place(x=330, y=220, width=140)
         self.item_prices_listbox = tk.Listbox(self.master, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        self.item_prices_listbox.place(x=230, y=200, width=340, height=200)
+        self.item_prices_listbox.place(x=210, y=250, width=380, height=200)
 
         self.current_window = None
 
@@ -129,6 +132,17 @@ class GroceryManagementSystem:
         self.info_listbox.place(x=280, y=100, width=600, height=400)
 
         self.current_window = inventory_window
+
+    def show_items(self):
+        # Fetch and display items in the item prices listbox
+        self.item_prices_listbox.delete(0, tk.END)  # Clear previous items
+        
+        inventory_items = self.db_manager.view_inventory()
+        for item in inventory_items:
+            item_name = item[0]
+            item_price = item[1]
+            item_quantity = item[2]
+            self.item_prices_listbox.insert(tk.END, f"Item Name: {item_name}\n Item Price: {item_price}\n Quantity Left: {item_quantity}")
 
     def add_items(self):
         def add_new_item_to_database():
