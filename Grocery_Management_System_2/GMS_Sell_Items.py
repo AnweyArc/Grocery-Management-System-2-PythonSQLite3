@@ -18,18 +18,22 @@ class DatabaseManager:
                             )""")
 
         self.cursor.execute("""CREATE TABLE IF NOT EXISTS sales (
-                                id INTEGER PRIMARY KEY,
-                                item_id INTEGER,
-                                quantity_sold INTEGER,
-                                sale_date TEXT,
-                                FOREIGN KEY (item_id) REFERENCES inventory(id)
-                            )""")
+                                    id INTEGER PRIMARY KEY,
+                                    item_id INTEGER,
+                                    item_name TEXT,
+                                    quantity_sold INTEGER,
+                                    FOREIGN KEY (item_id) REFERENCES inventory(id)
+                                )""")
+        
 
-        self.cursor.execute("""CREATE TABLE IF NOT EXISTS users (
-                                id INTEGER PRIMARY KEY,
-                                username TEXT UNIQUE,
-                                password TEXT
-                            )""")
+        self.cursor.execute("""CREATE TABLE IF NOT EXISTS sales (
+                        id INTEGER PRIMARY KEY,
+                        item_id INTEGER,
+                        item_name TEXT,
+                        quantity_sold INTEGER,
+                        sale_date TEXT,
+                        FOREIGN KEY (item_id) REFERENCES inventory(id)
+                    )""")
         self.conn.commit()
 
     # Store Inventory methods
@@ -58,7 +62,9 @@ class DatabaseManager:
                 if current_quantity >= quantity_sold:
                     new_quantity = current_quantity - quantity_sold
                     self.cursor.execute("UPDATE inventory SET quantity=? WHERE id=?", (new_quantity, item_id))
-                    self.cursor.execute("INSERT INTO sales (item_id, quantity_sold) VALUES (?, ?)", (item_id, quantity_sold))
+                    # Get the item name from the inventory and insert it into the sales table
+                    item_name = item[1]
+                    self.cursor.execute("INSERT INTO sales (item_id, item_name, quantity_sold) VALUES (?, ?, ?)", (item_id, item_name, quantity_sold))
                     self.conn.commit()
                     return True, item[3], new_quantity  # Return True, item price, and new quantity
                 else:

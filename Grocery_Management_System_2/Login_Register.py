@@ -29,7 +29,6 @@ class DatabaseManager:
                                     item_id INTEGER,
                                     item_name TEXT,
                                     quantity_sold INTEGER,
-                                    sale_date TEXT,
                                     FOREIGN KEY (item_id) REFERENCES inventory(id)
                                 )""")  
 
