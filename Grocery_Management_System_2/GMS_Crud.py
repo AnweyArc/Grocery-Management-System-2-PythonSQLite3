@@ -20,10 +20,11 @@ class DatabaseManager:
         self.cursor.execute("""CREATE TABLE IF NOT EXISTS sales (
                                 id INTEGER PRIMARY KEY,
                                 item_id INTEGER,
+                                item_name TEXT,
                                 quantity_sold INTEGER,
                                 sale_date TEXT,
                                 FOREIGN KEY (item_id) REFERENCES inventory(id)
-                            )""")
+                            )""")  # Added "item_name" column
 
         self.cursor.execute("""CREATE TABLE IF NOT EXISTS users (
                                 id INTEGER PRIMARY KEY,
@@ -80,6 +81,27 @@ class DatabaseManager:
             print("Item deleted successfully.")
         except sqlite3.Error as e:
             print("Error deleting item:", e)
+
+    # Sales methods
+    def sell_item(self, item_name, quantity_sold):
+        try:
+            item = self.get_item_by_name(item_name)
+            if item:
+                item_id = item[0]
+                current_quantity = item[2]
+                if current_quantity >= quantity_sold:
+                    new_quantity = current_quantity - quantity_sold
+                    self.cursor.execute("UPDATE inventory SET quantity=? WHERE id=?", (new_quantity, item_id))
+                    self.cursor.execute("INSERT INTO sales (item_id, item_name, quantity_sold) VALUES (?, ?, ?)", (item_id, item_name, quantity_sold))
+                    self.conn.commit()
+                    return True, item[3], new_quantity  # Return True, item price, and new quantity
+                else:
+                    return False, f"Sorry! Only {current_quantity} items left!", None
+            else:
+                return False, "Sorry, out of stock", None
+        except sqlite3.Error as e:
+            print("Error selling item:", e)
+            return False, "An error occurred", None
 
     def __del__(self):
         self.conn.close()

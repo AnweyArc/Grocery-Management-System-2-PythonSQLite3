@@ -17,6 +17,7 @@ class DatabaseManager:
                             )""")
         self.conn.commit()
 
+    # User Management methods
     def register_user(self, username, password):
         try:
             self.cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)",
@@ -47,7 +48,7 @@ class UserManagementSystem:
         self.master = master
         self.master.title("User Authentication")
         self.master.geometry("400x200")
-        self.db_manager = DatabaseManager("user_database.db")
+        self.db_manager = DatabaseManager("grocery_database.db")  # Changed database filename
 
         # Configure Background
         self.bg_color = "#cabeaf"

@@ -258,8 +258,12 @@ class GroceryManagementSystem:
         apply_button.grid(row=4, column=0, columnspan=2, pady=10)
 
     def view_inventory(self):
+        # Clear the listbox first
         self.info_listbox.delete(0, tk.END)
+        
+        # Fetch the latest inventory data from the database
         inventory_items = self.db_manager.view_inventory()
+        
         if inventory_items:
             for item in inventory_items:
                 item_name = item[0]
