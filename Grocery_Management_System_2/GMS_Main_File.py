@@ -63,8 +63,24 @@ class DatabaseManager:
         except sqlite3.Error as e:
             print("Error deleting item:", e)
 
+    def get_item_by_name(self, item_name):
+        try:
+            self.cursor.execute("SELECT * FROM inventory WHERE name=?", (item_name,))
+            return self.cursor.fetchone()
+        except sqlite3.Error as e:
+            print("Error retrieving item:", e)
+
+    def edit_item(self, item_id, new_name, new_quantity, new_price):
+        try:
+            self.cursor.execute("UPDATE inventory SET name=?, quantity=?, price=? WHERE id=?",
+                                (new_name, new_quantity, new_price, item_id))
+            self.conn.commit()
+        except sqlite3.Error as e:
+            print("Error editing item:", e)
+
     def __del__(self):
         self.conn.close()
+
 
 
 class GroceryManagementSystem:
