@@ -104,11 +104,11 @@ class GroceryManagementSystem:
 
         inventory_window = tk.Toplevel(self.master)
         inventory_window.title("Store Inventory")
-        inventory_window.geometry("800x600")
+        inventory_window.geometry("900x600")
         inventory_window.configure(bg=self.bg_color)
 
         title_label = tk.Label(inventory_window, text="Store Inventory", bg=self.bg_color, fg="black", font=("Arial", 20, "bold"))
-        title_label.place(x=290, y=20)
+        title_label.place(x=477, y=20)
 
         add_items_button = tk.Button(inventory_window, text="Add Items", bg=self.button_color, fg=self.text_color_white, font=("Arial", 10, "bold"), command=self.add_items)
         add_items_button.place(x=50, y=100, width=130, height=40)
@@ -126,7 +126,7 @@ class GroceryManagementSystem:
         clear_inventory_button.place(x=50, y=300, width=130, height=40)
 
         self.info_listbox = tk.Listbox(inventory_window, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        self.info_listbox.place(x=400, y=100, width=300, height=400)
+        self.info_listbox.place(x=280, y=100, width=600, height=400)
 
         self.current_window = inventory_window
 
