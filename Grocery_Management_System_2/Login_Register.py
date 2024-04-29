@@ -1,6 +1,12 @@
 import tkinter as tk
 from tkinter import messagebox
 import sqlite3
+import tkinter as tk
+from tkinter import messagebox
+import sqlite3
+import subprocess
+import GMS_Main_File  # Import the main file for admin
+import GMS_Sell_Items  # Import the main file for regular user
 
 class DatabaseManager:
     def __init__(self, db_file):
@@ -115,10 +121,12 @@ class UserManagementSystem:
         if user:
             if user[3] == "Admin":  # Check if the user role is Admin
                 messagebox.showinfo("Success", "Login successful as admin.")
-                open_main_file()  # Open the admin file
+                # Launch the main file for admin
+                subprocess.Popen(["python", "GMS_Main_File.py"])
             else:
                 messagebox.showinfo("Success", "Login successful as regular user.")
-                open_sell_items_file()  # Open the user file
+                # Launch the sell items file for regular user
+                subprocess.Popen(["python", "GMS_Sell_Items.py"])
         else:
             messagebox.showerror("Error", "Invalid username or password.")
 
