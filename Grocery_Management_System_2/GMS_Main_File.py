@@ -21,7 +21,6 @@ class DatabaseManager:
                                 id INTEGER PRIMARY KEY,
                                 item_id INTEGER,
                                 quantity_sold INTEGER,
-                                sale_date TEXT,
                                 FOREIGN KEY (item_id) REFERENCES inventory(id)
                             )""")
 
@@ -80,7 +79,6 @@ class DatabaseManager:
 
     def __del__(self):
         self.conn.close()
-
 
 
 class GroceryManagementSystem:
@@ -163,8 +161,21 @@ class GroceryManagementSystem:
     def add_items(self):
         def add_new_item_to_database():
             item_name = new_item_name_entry.get()
-            item_quantity = int(new_item_quantity_entry.get())
-            item_price = float(new_item_price_entry.get())
+            item_quantity = new_item_quantity_entry.get()
+            item_price = new_item_price_entry.get()
+            
+            # Check if any field is empty
+            if not item_name or not item_quantity or not item_price:
+                messagebox.showerror("Error", "No input! Please enter values!")
+                return
+            
+            try:
+                item_quantity = int(item_quantity)
+                item_price = float(item_price)
+            except ValueError:
+                messagebox.showerror("Error", "Invalid input! Quantity should be an integer and Price should be a number.")
+                return
+        
             self.db_manager.add_item(item_name, item_quantity, item_price)
             add_window.destroy()
             self.view_inventory()
@@ -211,7 +222,19 @@ class GroceryManagementSystem:
 
         def add_existing_item_to_database():
             item_name = existing_item_name_entry.get()
-            item_quantity = int(existing_item_quantity_entry.get())
+            item_quantity = existing_item_quantity_entry.get()
+
+            # Check if any field is empty
+            if not item_name or not item_quantity:
+                messagebox.showerror("Error", "No input! Please enter values!")
+                return
+            
+            try:
+                item_quantity = int(item_quantity)
+            except ValueError:
+                messagebox.showerror("Error", "Invalid input! Quantity should be an integer.")
+                return
+
             item = self.db_manager.get_item_by_name(item_name)
             if item:
                 current_quantity = item[2]
@@ -265,50 +288,55 @@ class GroceryManagementSystem:
         new_quantity_entry = tk.Entry(edit_window)
         new_quantity_entry.grid(row=2, column=1, padx=10, pady=5)
 
-        new_price_label = tk.Label(edit_window, text="New Price:")
+        new_price_label = tk.Label(edit_window, text="New Price/Item:")
         new_price_label.grid(row=3, column=0, padx=10, pady=5, sticky="e")
         new_price_entry = tk.Entry(edit_window)
         new_price_entry.grid(row=3, column=1, padx=10, pady=5)
 
-        def apply_edit():
+        def update_item_in_database():
             item_name = item_name_entry.get()
             new_name = new_name_entry.get()
-            new_quantity = int(new_quantity_entry.get())
-            new_price = float(new_price_entry.get())
+            new_quantity = new_quantity_entry.get()
+            new_price = new_price_entry.get()
+
+            # Check if any field is empty
+            if not item_name or not new_name or not new_quantity or not new_price:
+                messagebox.showerror("Error", "No input! Please enter values!")
+                return
+            
+            try:
+                new_quantity = int(new_quantity)
+                new_price = float(new_price)
+            except ValueError:
+                messagebox.showerror("Error", "Invalid input! Quantity should be an integer and Price should be a number.")
+                return
+
             item = self.db_manager.get_item_by_name(item_name)
             if item:
-                item_id = item[0]
-                self.db_manager.edit_item(item_id, new_name, new_quantity, new_price)
+                self.db_manager.edit_item(item[0], new_name, new_quantity, new_price)
                 edit_window.destroy()
                 self.view_inventory()
             else:
-                messagebox.showerror("Item Not Found", "The item does not exist in the inventory.")
+                messagebox.showerror("Item Not Found", "The item does not exist in the database.")
 
-        apply_button = tk.Button(edit_window, text="Apply Edit", command=apply_edit)
-        apply_button.grid(row=4, column=0, columnspan=2, pady=10)
+        edit_item_button = tk.Button(edit_window, text="Edit Item", command=update_item_in_database)
+        edit_item_button.grid(row=4, column=0, columnspan=2, pady=10)
 
     def view_inventory(self):
-        # Clear the listbox first
-        self.info_listbox.delete(0, tk.END)
+        self.info_listbox.delete(0, tk.END)  # Clear previous items
         
-        # Fetch the latest inventory data from the database
         inventory_items = self.db_manager.view_inventory()
-        
-        if inventory_items:
-            for item in inventory_items:
-                item_name = item[0]
-                item_price = item[1]
-                item_quantity = item[2]
-                self.info_listbox.insert(tk.END, f"Item Name: {item_name}\n Item Price: {item_price}\n Quantity Left: {item_quantity}")
-        else:
-            self.info_listbox.insert(tk.END, "No items on the inventory!")
+        for item in inventory_items:
+            item_name = item[0]
+            item_price = item[1]
+            item_quantity = item[2]
+            self.info_listbox.insert(tk.END, f"Item Name: {item_name}\n Item Price: {item_price}\n Quantity Left: {item_quantity}")
 
     def confirm_clear_inventory(self):
-        confirmation = messagebox.askyesno("Confirmation", "Are you sure you want to clear the inventory? This will delete all the items in the inventory.")
-        if confirmation:
+        confirm = messagebox.askyesno("Confirm", "Are you sure you want to clear the inventory?")
+        if confirm:
             self.db_manager.clear_inventory()
-            self.view_inventory()
-
+            self.info_listbox.delete(0, tk.END)
 
 def main():
     root = tk.Tk()
