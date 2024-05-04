@@ -74,6 +74,14 @@ class DatabaseManager:
         except sqlite3.Error as e:
             print("Error saving sale:", e)
 
+    def view_inventory(self):
+        try:
+            self.cursor.execute("SELECT name, price, quantity FROM inventory")
+            return self.cursor.fetchall()
+        except sqlite3.Error as e:
+            print("Error viewing inventory:", e)
+            return []
+
     def __del__(self):
         self.conn.close()
 
@@ -94,9 +102,9 @@ class SellItemApp:
         self.sell_item_button = tk.Button(self.master, text="Sell Item", bg="#b5485d", fg="white", font=("Arial", 12, "bold"), command=self.sell_item_window)
         self.sell_item_button.pack(pady=10)
 
-        # Print receipt button
-        self.print_receipt_button = tk.Button(self.master, text="Print Receipt", bg="#b5485d", fg="white", font=("Arial", 12, "bold"))
-        self.print_receipt_button.pack(pady=10)
+        # Show Stock button
+        self.show_stock_button = tk.Button(self.master, text="Show Stock", bg="#b5485d", fg="white", font=("Arial", 12, "bold"), command=self.show_stock)
+        self.show_stock_button.pack(pady=10)
 
         # Receipt listbox
         self.receipt_listbox = tk.Listbox(self.master, bg="#cabeaf", fg="black", font=("Arial", 12))
@@ -105,7 +113,7 @@ class SellItemApp:
     def sell_item_window(self):
         sell_window = tk.Toplevel(self.master)
         sell_window.title("Sell Item")
-        sell_window.geometry("500x600")
+        sell_window.geometry("700x600")
         sell_window.configure(bg="#cabeaf")
 
         # Item ID label
@@ -159,7 +167,7 @@ class SellItemApp:
     def show_receipt(self, items_bought, total_price):
         receipt_window = tk.Toplevel(self.master)
         receipt_window.title("Receipt")
-        receipt_window.geometry("400x500")
+        receipt_window.geometry("600x500")
         receipt_window.configure(bg="#cabeaf")
 
         # Receipt title label
@@ -180,6 +188,24 @@ class SellItemApp:
         total_price_label = tk.Label(receipt_window, text=f"Total Price: {total_price}", bg="#cabeaf", fg="black", font=("Arial", 12))
         total_price_label.pack(pady=10)
 
+    def show_stock(self):
+        self.receipt_listbox.delete(0, tk.END)  # Clear previous items
+
+        inventory_items = self.db_manager.view_inventory()
+
+        # Add headers
+        self.receipt_listbox.insert(tk.END, "{:<20} {:<15} {:<15}".format("Item Name", "Item Price", "Quantity Left"))
+
+        for item in inventory_items:
+            item_name = item[0]
+            item_price = item[1]
+            item_quantity = item[2]
+            # Format each item to align properly in columns
+            item_str = "{:<20} {:<15} {:<15}".format(item_name, item_price, item_quantity)
+            self.receipt_listbox.insert(tk.END, item_str)
+
+        # Set column headers
+        self.receipt_listbox.itemconfig(0, {'bg': '#808080', 'fg': 'white'})
 
 def main():
     db_manager = DatabaseManager("grocery_database.db")
