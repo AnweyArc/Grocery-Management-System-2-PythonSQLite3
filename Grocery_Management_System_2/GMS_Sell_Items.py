@@ -113,7 +113,7 @@ class SellItemApp:
     def sell_item_window(self):
         sell_window = tk.Toplevel(self.master)
         sell_window.title("Sell Item")
-        sell_window.geometry("700x600")
+        sell_window.geometry("900x600")
         sell_window.configure(bg="#cabeaf")
 
         # Item ID label
@@ -143,9 +143,9 @@ class SellItemApp:
             if success:
                 total_price = item_price * item_quantity
                 if remaining_quantity is not None:
-                    message = f"Item Name: {item_name}, Price per Item: {item_price}, Quantity: {item_quantity}, Total Price: {total_price} -- Item Left: {remaining_quantity}"
+                    message = f"Item Name: {item_name:<20} Price per Item: {item_price:<15} Quantity: {item_quantity:<15} Total Price: {total_price:<15} Item Left: {remaining_quantity:<10}"
                 else:
-                    message = f"Item Name: {item_name}, Price per Item: {item_price}, Quantity: {item_quantity}, Total Price: {total_price}"
+                    message = f"Item Name: {item_name:<20} Price per Item: {item_price:<15} Quantity: {item_quantity:<15} Total Price: {total_price:<15}"
                 self.checkout_result_listbox.insert(tk.END, message)
             else:
                 messagebox.showerror("Error", item_price)
@@ -167,7 +167,7 @@ class SellItemApp:
     def show_receipt(self, items_bought, total_price):
         receipt_window = tk.Toplevel(self.master)
         receipt_window.title("Receipt")
-        receipt_window.geometry("600x500")
+        receipt_window.geometry("900x500")
         receipt_window.configure(bg="#cabeaf")
 
         # Receipt title label
