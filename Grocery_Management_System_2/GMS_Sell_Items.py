@@ -9,20 +9,27 @@ class DatabaseManager:
         self.create_tables()
 
     def create_tables(self):
-        # Create tables for store inventory and sales
-        self.cursor.execute("""CREATE TABLE IF NOT EXISTS inventory (
-                                id INTEGER PRIMARY KEY,
-                                name TEXT,
-                                quantity INTEGER,
-                                price REAL
-                            )""")
+        try:
+            # Create tables for store inventory and sales
+            self.cursor.execute("""CREATE TABLE IF NOT EXISTS inventory (
+                                    id INTEGER PRIMARY KEY,
+                                    name TEXT,
+                                    quantity INTEGER,
+                                    price REAL
+                                )""")
 
-        self.cursor.execute("""CREATE TABLE IF NOT EXISTS sales (
-                                id INTEGER PRIMARY KEY,
-                                items_bought TEXT,
-                                total_price REAL
-                            )""")
-        self.conn.commit()
+            self.cursor.execute("""CREATE TABLE IF NOT EXISTS sales (
+                                    id INTEGER PRIMARY KEY,
+                                    items_bought TEXT,
+                                    total_price REAL
+                                )""")
+            self.conn.commit()
+
+            # Print schema of the sales table
+            self.cursor.execute("PRAGMA table_info(sales)")
+            print(self.cursor.fetchall())  # Print the schema of the sales table
+        except sqlite3.Error as e:
+            print("Error creating tables:", e)
 
     # Store Inventory methods
     def add_item(self, name, quantity, price):
@@ -142,8 +149,7 @@ class SellItemApp:
         def bill_out():
             items_bought = self.checkout_result_listbox.get(0, tk.END)
             total_price = sum(float(item.split(":")[-1].split(",")[0].strip()) for item in items_bought)
-            items_bought_str = "\n".join(items_bought)
-            self.db_manager.save_sale(items_bought_str, total_price)
+            self.db_manager.save_sale("\n".join(items_bought), total_price)
             self.show_receipt(items_bought, total_price)
 
         # Bill Out button

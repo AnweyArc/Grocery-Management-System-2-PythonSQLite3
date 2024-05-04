@@ -20,10 +20,8 @@ class DatabaseManager:
 
             self.cursor.execute("""CREATE TABLE IF NOT EXISTS sales (
                                     id INTEGER PRIMARY KEY,
-                                    item_id INTEGER,
-                                    item_name TEXT,
-                                    quantity_sold INTEGER,
-                                    FOREIGN KEY (item_id) REFERENCES inventory(id)
+                                    items_bought TEXT,
+                                    total_price REAL
                                 )""")
 
             self.cursor.execute("""CREATE TABLE IF NOT EXISTS users (
