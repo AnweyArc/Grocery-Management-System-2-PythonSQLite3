@@ -96,22 +96,24 @@ class GroceryManagementSystem:
         self.master.configure(bg=self.bg_color)
 
         self.title_label = tk.Label(self.master, text="Grocery Management System", bg=self.bg_color, fg=self.text_color, font=("Arial", 20, "bold"))
-        self.title_label.place(x=205, y=20)
+        self.title_label.place(x=575, y=20)
         self.title_label = tk.Label(self.master, text="Inventory Dashboard", bg=self.bg_color, fg=self.text_color, font=("Arial", 15, "bold"))
-        self.title_label.place(x=298, y=60)
+        self.title_label.place(x=670, y=60)
 
         self.store_inventory_button = tk.Button(self.master, text="Store Inventory", bg=self.button_color, fg=self.text_color_white, font=("Arial", 12, "bold"), command=self.open_inventory_window)
-        self.store_inventory_button.place(x=325, y=100, width=150, height=30)
+        self.store_inventory_button.place(x=700, y=100, width=150, height=30)
 
         self.show_items_button = tk.Button(self.master, text="Show Items", bg=self.button_color, fg=self.text_color_white, font=("Arial", 12, "bold"), command=self.show_items)
-        self.show_items_button.place(x=325, y=150, width=150, height=30)
+        self.show_items_button.place(x=700, y=150, width=150, height=30)
 
         self.item_prices_label = tk.Label(self.master, text="Item Prices", bg=self.bg_color, fg=self.text_color, font=("Arial", 12, "bold"))
-        self.item_prices_label.place(x=356, y=190)
+        self.item_prices_label.place(x=730, y=190)
+        
         self.item_prices_entry = tk.Entry(self.master, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        self.item_prices_entry.place(x=330, y=220, width=140)
+        self.item_prices_entry.place(x=704, y=220, width=140)
+        
         self.item_prices_listbox = tk.Listbox(self.master, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        self.item_prices_listbox.place(x=210, y=250, width=380, height=200)
+        self.item_prices_listbox.place(x=580, y=250, width=380, height=200)
 
         self.current_window = None
 
@@ -341,7 +343,9 @@ class GroceryManagementSystem:
 def main():
     root = tk.Tk()
     app = GroceryManagementSystem(root)
+    root.state('zoomed')
     root.mainloop()
+    
 
 if __name__ == "__main__":
     main()

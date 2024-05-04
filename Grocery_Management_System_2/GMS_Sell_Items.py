@@ -9,7 +9,7 @@ class DatabaseManager:
         self.create_tables()
 
     def create_tables(self):
-        # Create tables for store inventory and store database
+        # Create tables for store inventory and sales
         self.cursor.execute("""CREATE TABLE IF NOT EXISTS inventory (
                                 id INTEGER PRIMARY KEY,
                                 name TEXT,
@@ -18,22 +18,10 @@ class DatabaseManager:
                             )""")
 
         self.cursor.execute("""CREATE TABLE IF NOT EXISTS sales (
-                                    id INTEGER PRIMARY KEY,
-                                    item_id INTEGER,
-                                    item_name TEXT,
-                                    quantity_sold INTEGER,
-                                    FOREIGN KEY (item_id) REFERENCES inventory(id)
-                                )""")
-        
-
-        self.cursor.execute("""CREATE TABLE IF NOT EXISTS sales (
-                        id INTEGER PRIMARY KEY,
-                        item_id INTEGER,
-                        item_name TEXT,
-                        quantity_sold INTEGER,
-                        sale_date TEXT,
-                        FOREIGN KEY (item_id) REFERENCES inventory(id)
-                    )""")
+                                id INTEGER PRIMARY KEY,
+                                items_bought TEXT,
+                                total_price REAL
+                            )""")
         self.conn.commit()
 
     # Store Inventory methods
@@ -45,14 +33,6 @@ class DatabaseManager:
         except sqlite3.Error as e:
             print("Error adding item to inventory:", e)
 
-    def view_inventory(self):
-        try:
-            self.cursor.execute("SELECT name, price, quantity FROM inventory")
-            return self.cursor.fetchall()
-        except sqlite3.Error as e:
-            print("Error viewing inventory:", e)
-            return []
-
     def sell_item(self, item_name, quantity_sold):
         try:
             item = self.get_item_by_name(item_name)
@@ -62,9 +42,6 @@ class DatabaseManager:
                 if current_quantity >= quantity_sold:
                     new_quantity = current_quantity - quantity_sold
                     self.cursor.execute("UPDATE inventory SET quantity=? WHERE id=?", (new_quantity, item_id))
-                    # Get the item name from the inventory and insert it into the sales table
-                    item_name = item[1]
-                    self.cursor.execute("INSERT INTO sales (item_id, item_name, quantity_sold) VALUES (?, ?, ?)", (item_id, item_name, quantity_sold))
                     self.conn.commit()
                     return True, item[3], new_quantity  # Return True, item price, and new quantity
                 else:
@@ -82,7 +59,14 @@ class DatabaseManager:
         except sqlite3.Error as e:
             print("Error getting item by name:", e)
             return None
-    
+
+    def save_sale(self, items_bought, total_price):
+        try:
+            self.cursor.execute("INSERT INTO sales (items_bought, total_price) VALUES (?, ?)", (items_bought, total_price))
+            self.conn.commit()
+        except sqlite3.Error as e:
+            print("Error saving sale:", e)
+
     def __del__(self):
         self.conn.close()
 
@@ -152,8 +136,43 @@ class SellItemApp:
                 messagebox.showerror("Error", item_price)
 
         # Checkout button
-        checkout_button = tk.Button(sell_window, text="Checkout", bg="#b5485d", fg="white", font=("Arial", 12, "bold"), command=checkout)
+        checkout_button = tk.Button(sell_window, text="Add to Cart", bg="#b5485d", fg="white", font=("Arial", 12, "bold"), command=checkout)
         checkout_button.pack(pady=10)
+
+        def bill_out():
+            items_bought = self.checkout_result_listbox.get(0, tk.END)
+            total_price = sum(float(item.split(":")[-1].split(",")[0].strip()) for item in items_bought)
+            items_bought_str = "\n".join(items_bought)
+            self.db_manager.save_sale(items_bought_str, total_price)
+            self.show_receipt(items_bought, total_price)
+
+        # Bill Out button
+        bill_out_button = tk.Button(sell_window, text="Bill Out", bg="#b5485d", fg="white", font=("Arial", 12, "bold"), command=bill_out)
+        bill_out_button.pack(pady=10)
+
+    def show_receipt(self, items_bought, total_price):
+        receipt_window = tk.Toplevel(self.master)
+        receipt_window.title("Receipt")
+        receipt_window.geometry("400x500")
+        receipt_window.configure(bg="#cabeaf")
+
+        # Receipt title label
+        receipt_title_label = tk.Label(receipt_window, text="Receipt", bg="#cabeaf", fg="black", font=("Arial", 20, "bold"))
+        receipt_title_label.pack(pady=10)
+
+        # Items bought label
+        items_label = tk.Label(receipt_window, text="Items Bought:", bg="#cabeaf", fg="black", font=("Arial", 12))
+        items_label.pack(pady=5)
+
+        # Items listbox
+        items_listbox = tk.Listbox(receipt_window, bg="#cabeaf", fg="black", font=("Arial", 12))
+        for item in items_bought:
+            items_listbox.insert(tk.END, item)
+        items_listbox.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)
+
+        # Total price label
+        total_price_label = tk.Label(receipt_window, text=f"Total Price: {total_price}", bg="#cabeaf", fg="black", font=("Arial", 12))
+        total_price_label.pack(pady=10)
 
 
 def main():
