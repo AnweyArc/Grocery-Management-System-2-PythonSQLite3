@@ -154,11 +154,17 @@ class GroceryManagementSystem:
         self.item_prices_listbox.delete(0, tk.END)  # Clear previous items
         
         inventory_items = self.db_manager.view_inventory()
+        
+        # Add headers
+        self.item_prices_listbox.insert(tk.END, "{:<20} {:<15} {:<15}".format("Item Name", "Item Price", "Quantity Left"))
+        
         for item in inventory_items:
             item_name = item[0]
             item_price = item[1]
             item_quantity = item[2]
-            self.item_prices_listbox.insert(tk.END, f"Item Name: {item_name}\n Item Price: {item_price}\n Quantity Left: {item_quantity}")
+            # Format each item to align properly in columns
+            item_str = "{:<20} {:<15} {:<15}".format(item_name, item_price, item_quantity)
+            self.item_prices_listbox.insert(tk.END, item_str)
 
     def add_items(self):
         def add_new_item_to_database():
@@ -328,11 +334,17 @@ class GroceryManagementSystem:
         self.info_listbox.delete(0, tk.END)  # Clear previous items
         
         inventory_items = self.db_manager.view_inventory()
+        
+        # Add headers
+        self.info_listbox.insert(tk.END, "{:<20} {:<15} {:<15}".format("Item Name", "Item Price", "Quantity Left"))
+        
         for item in inventory_items:
             item_name = item[0]
             item_price = item[1]
             item_quantity = item[2]
-            self.info_listbox.insert(tk.END, f"Item Name: {item_name}\n Item Price: {item_price}\n Quantity Left: {item_quantity}")
+            # Format each item to align properly in columns
+            item_str = "{:<20} {:<15} {:<15}".format(item_name, item_price, item_quantity)
+            self.info_listbox.insert(tk.END, item_str)
 
     def confirm_clear_inventory(self):
         confirm = messagebox.askyesno("Confirm", "Are you sure you want to clear the inventory?")
