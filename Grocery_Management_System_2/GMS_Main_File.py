@@ -30,6 +30,14 @@ class DatabaseManager:
                                 password TEXT
                             )""")
         self.conn.commit()
+        
+    def search_item(self, item_name):
+        try:
+            self.cursor.execute("SELECT name, price, quantity FROM inventory WHERE name LIKE ?", ('%' + item_name + '%',))
+            return self.cursor.fetchall()
+        except sqlite3.Error as e:
+            print("Error searching item:", e)
+            return []
 
     # Store Inventory methods
     def add_item(self, name, quantity, price):
@@ -108,9 +116,11 @@ class GroceryManagementSystem:
 
         self.item_prices_label = tk.Label(self.master, text="Item Prices", bg=self.bg_color, fg=self.text_color, font=("Arial", 12, "bold"))
         self.item_prices_label.place(x=730, y=190)
-        
+
+        #Search Bar
         self.item_prices_entry = tk.Entry(self.master, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
         self.item_prices_entry.place(x=704, y=220, width=140)
+        self.item_prices_entry.bind("<KeyRelease>", self.search_items)
         
         self.item_prices_listbox = tk.Listbox(self.master, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
         self.item_prices_listbox.place(x=580, y=250, width=380, height=200)
@@ -148,6 +158,17 @@ class GroceryManagementSystem:
         self.info_listbox.place(x=280, y=100, width=600, height=400)
 
         self.current_window = inventory_window
+
+    def search_items(self, event=None):
+        search_query = self.item_prices_entry.get()
+        self.item_prices_listbox.delete(0, tk.END)  # Clear previous items
+
+        items = self.db_manager.search_item(search_query)
+        if items:
+            self.item_prices_listbox.insert(tk.END, "{:<20} {:<15} {:<15}".format("Item Name", "Item Price", "Quantity Left"))
+            for item in items:
+                item_str = "{:<20} {:<15} {:<15}".format(item[0], item[1], item[2])
+                self.item_prices_listbox.insert(tk.END, item_str)
 
     def show_items(self):
         # Fetch and display items in the item prices listbox
