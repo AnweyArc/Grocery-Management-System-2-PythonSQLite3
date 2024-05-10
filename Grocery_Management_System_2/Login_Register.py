@@ -1,9 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
 import sqlite3
-import tkinter as tk
-from tkinter import messagebox
-import sqlite3
 import subprocess
 import GMS_Main_File  # Import the main file for admin
 import GMS_Sell_Items  # Import the main file for regular user
@@ -105,17 +102,32 @@ class UserManagementSystem:
         self.password_entry = tk.Entry(self.master, bg=self.bg_color, fg=self.text_color, font=("Arial", 12), show="*")
         self.password_entry.place(x=150, y=100)
 
+        # Checkbox for showing password
+        self.show_password_var = tk.IntVar()
+        self.show_password_checkbox = tk.Checkbutton(self.master, text="Show Password", variable=self.show_password_var, bg=self.bg_color, fg=self.text_color, font=("Arial", 10), command=self.toggle_password_visibility)
+        self.show_password_checkbox.place(x=145, y=130)
+
         # Buttons
         self.login_button = tk.Button(self.master, text="Login", bg=self.button_color, fg=self.text_color_white, font=("Arial", 12, "bold"), command=self.login)
-        self.login_button.place(x=100, y=140)
+        self.login_button.place(x=100, y=160)
 
         self.register_button = tk.Button(self.master, text="Register", bg=self.button_color, fg=self.text_color_white, font=("Arial", 12, "bold"), command=self.register)
-        self.register_button.place(x=200, y=140)
+        self.register_button.place(x=200, y=160)
+
+    def toggle_password_visibility(self):
+        # Toggle password visibility based on checkbox state
+        if self.show_password_var.get() == 1:
+            self.password_entry.config(show="")
+        else:
+            self.password_entry.config(show="*")
 
     def login(self):
         # Functionality for user login
         username = self.username_entry.get()
         password = self.password_entry.get()
+        if not username or not password:  # Check if entries are empty
+            messagebox.showerror("Error", "Please enter username and password.")
+            return
         user = self.db_manager.login_user(username, password)
         if user:
             if user[3] == "Admin":  # Check if the user role is Admin
@@ -133,6 +145,9 @@ class UserManagementSystem:
         # Functionality for user registration
         username = self.username_entry.get()
         password = self.password_entry.get()
+        if not username or not password:  # Check if entries are empty
+            messagebox.showerror("Error", "Please enter username and password.")
+            return
         self.db_manager.register_user(username, password)
 
 def main():
