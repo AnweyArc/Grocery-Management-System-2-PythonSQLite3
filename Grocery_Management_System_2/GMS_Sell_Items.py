@@ -82,6 +82,18 @@ class DatabaseManager:
             print("Error viewing inventory:", e)
             return []
 
+    def get_latest_sale_id(self):
+        try:
+            self.cursor.execute("SELECT MAX(id) FROM sales")
+            result = self.cursor.fetchone()
+            if result and result[0]:
+                return result[0]
+            else:
+                return 0
+        except sqlite3.Error as e:
+            print("Error fetching latest sale ID:", e)
+            return 0
+
     def __del__(self):
         self.conn.close()
 
@@ -90,9 +102,11 @@ class SellItemApp:
     def __init__(self, master, db_manager):
         self.master = master
         self.master.title("Sell Items")
-        self.master.geometry("800x600")
         self.master.configure(bg="#cabeaf")
         self.db_manager = db_manager
+
+        # Fetch the latest sale ID from the database
+        self.latest_sale_id = self.db_manager.get_latest_sale_id()
 
         # Title label
         self.title_label = tk.Label(self.master, text="Sell Items", bg="#cabeaf", fg="black", font=("Arial", 20, "bold"))
@@ -116,8 +130,11 @@ class SellItemApp:
         sell_window.geometry("900x600")
         sell_window.configure(bg="#cabeaf")
 
+        # Calculate the next sale ID
+        self.latest_sale_id += 1
+
         # Item ID label
-        item_id_label = tk.Label(sell_window, text="ID: 1", bg="#cabeaf", fg="black", font=("Arial", 12))
+        item_id_label = tk.Label(sell_window, text=f"ID: {self.latest_sale_id}", bg="#cabeaf", fg="black", font=("Arial", 12))
         item_id_label.pack(pady=10)
 
         # Item Name entry
@@ -167,7 +184,7 @@ class SellItemApp:
     def show_receipt(self, items_bought, total_price):
         receipt_window = tk.Toplevel(self.master)
         receipt_window.title("Receipt")
-        receipt_window.geometry("900x500")
+        receipt_window.geometry("900x600")
         receipt_window.configure(bg="#cabeaf")
 
         # Receipt title label
@@ -187,6 +204,29 @@ class SellItemApp:
         # Total price label
         total_price_label = tk.Label(receipt_window, text=f"Total Price: {total_price}", bg="#cabeaf", fg="black", font=("Arial", 12))
         total_price_label.pack(pady=10)
+
+        # Money entry
+        money_label = tk.Label(receipt_window, text="Enter Money:", bg="#cabeaf", fg="black", font=("Arial", 12))
+        money_label.pack(pady=5)
+        money_entry = tk.Entry(receipt_window, font=("Arial", 12))
+        money_entry.pack(pady=5)
+
+        # Calculate button
+        def calculate_change():
+            try:
+                money = float(money_entry.get())
+                change = money - total_price
+                change_label.config(text=f"Change: {change}")
+            except ValueError:
+                messagebox.showerror("Error", "Invalid input for money.")
+
+        calculate_button = tk.Button(receipt_window, text="Calculate Change", bg="#b5485d", fg="white", font=("Arial", 12, "bold"), command=calculate_change)
+        calculate_button.pack(pady=10)
+
+        # Change label
+        change_label = tk.Label(receipt_window, text="Change:", bg="#cabeaf", fg="black", font=("Arial", 12))
+        change_label.pack(pady=10)
+
 
     def show_stock(self):
         self.receipt_listbox.delete(0, tk.END)  # Clear previous items
@@ -210,6 +250,7 @@ class SellItemApp:
 def main():
     db_manager = DatabaseManager("grocery_database.db")
     root = tk.Tk()
+    root.state("zoomed")
     app = SellItemApp(root, db_manager)
     root.mainloop()
 
