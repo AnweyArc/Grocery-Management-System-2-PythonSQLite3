@@ -149,6 +149,26 @@ class SellItemApp:
         item_quantity_entry = tk.Entry(sell_window, font=("Arial", 12))
         item_quantity_entry.pack(pady=5)
 
+        # Show Stocks button
+        def show_stocks():
+            stocks_window = tk.Toplevel()
+            stocks_window.title("Stocks")
+            stocks_window.geometry("500x300")
+            stocks_window.configure(bg="#cabeaf")
+
+            stocks_label = tk.Label(stocks_window, text="Stocks", bg="#cabeaf", fg="black", font=("Arial", 20, "bold"))
+            stocks_label.pack(pady=10)
+
+            # Retrieve and display stocks
+            stocks = db_manager.view_inventory()
+            for stock in stocks:
+                stock_str = f"{stock[0]} - Quantity: {stock[2]}"
+                stock_label = tk.Label(stocks_window, text=stock_str, bg="#cabeaf", fg="black", font=("Arial", 12))
+                stock_label.pack(pady=5)
+
+        show_stocks_button = tk.Button(sell_window, text="Show Stocks", bg="#b5485d", fg="white", font=("Arial", 12, "bold"), command=show_stocks)
+        show_stocks_button.pack(pady=10)
+
         # Checkout result listbox
         self.checkout_result_listbox = tk.Listbox(sell_window, bg="#cabeaf", fg="black", font=("Arial", 12))
         self.checkout_result_listbox.pack(pady=20, padx=10, fill=tk.BOTH, expand=True)
@@ -180,6 +200,7 @@ class SellItemApp:
         # Bill Out button
         bill_out_button = tk.Button(sell_window, text="Bill Out", bg="#b5485d", fg="white", font=("Arial", 12, "bold"), command=bill_out)
         bill_out_button.pack(pady=10)
+
 
     def show_receipt(self, items_bought, total_price):
         receipt_window = tk.Toplevel(self.master)
@@ -227,6 +248,13 @@ class SellItemApp:
         change_label = tk.Label(receipt_window, text="Change:", bg="#cabeaf", fg="black", font=("Arial", 12))
         change_label.pack(pady=10)
 
+        # Finish session button
+        def finish_session():
+            receipt_window.destroy()
+            messagebox.showinfo("Thank You", "Thank you for buying!")
+
+        finish_button = tk.Button(receipt_window, text="Finish Session", bg="#b5485d", fg="white", font=("Arial", 12, "bold"), command=finish_session)
+        finish_button.pack(pady=10)
 
     def show_stock(self):
         self.receipt_listbox.delete(0, tk.END)  # Clear previous items
