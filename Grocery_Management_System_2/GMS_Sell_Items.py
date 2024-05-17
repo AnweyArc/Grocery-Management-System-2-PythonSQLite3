@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 import sqlite3
 
 class DatabaseManager:
@@ -150,8 +150,8 @@ class SellItemApp:
         self.receipt_listbox.insert(tk.END, "{:<20} {:<15} {:<15}".format("Item Name", "Item Price", "Quantity Left"))
 
         for item in results:
-            item_name = item[1]
-            item_price = item[3]
+            item_name = item[0]
+            item_price = item[1]
             item_quantity = item[2]
             # Format each item to align properly in columns
             item_str = "{:<20} {:<15} {:<15}".format(item_name, item_price, item_quantity)
@@ -188,20 +188,44 @@ class SellItemApp:
 
         # Show Stocks button
         def show_stocks():
-            stocks_window = tk.Toplevel()
+            stocks_window = tk.Toplevel(sell_window)
             stocks_window.title("Stocks")
-            stocks_window.geometry("500x300")
+            stocks_window.geometry("700x500")
             stocks_window.configure(bg="#cabeaf")
 
             stocks_label = tk.Label(stocks_window, text="Stocks", bg="#cabeaf", fg="black", font=("Arial", 20, "bold"))
             stocks_label.pack(pady=10)
 
-            # Retrieve and display stocks
-            stocks = self.db_manager.view_inventory()  # Use self.db_manager instead of db_manager
-            for stock in stocks:
-                stock_str = f"{stock[0]} - Quantity: {stock[2]}"
-                stock_label = tk.Label(stocks_window, text=stock_str, bg="#cabeaf", fg="black", font=("Arial", 12))
-                stock_label.pack(pady=5)
+            # Search bar
+            search_entry = tk.Entry(stocks_window, font=("Arial", 12))
+            search_entry.pack(pady=10)
+
+            # Create Treeview for tabular display
+            tree = ttk.Treeview(stocks_window, columns=("Item Name", "Item Price", "Quantity Left"), show="headings")
+            tree.heading("Item Name", text="Item Name")
+            tree.heading("Item Price", text="Item Price")
+            tree.heading("Quantity Left", text="Quantity Left")
+            tree.pack(pady=20, padx=10, fill=tk.BOTH, expand=True)
+
+            def search_inventory(event):
+                search_term = search_entry.get()
+                if search_term:
+                    results = self.db_manager.search_item_by_name(search_term)
+                else:
+                    results = self.db_manager.view_inventory()
+
+                # Clear previous items in the tree
+                for item in tree.get_children():
+                    tree.delete(item)
+
+                # Insert new items into the tree
+                for item in results:
+                    tree.insert("", tk.END, values=(item[0], item[1], item[2]))
+
+            search_entry.bind("<KeyRelease>", search_inventory)
+
+            # Load initial data
+            search_inventory(None)
 
         show_stocks_button = tk.Button(sell_window, text="Show Stocks", bg="#b5485d", fg="white", font=("Arial", 12, "bold"), command=show_stocks)
         show_stocks_button.pack(pady=10)
@@ -213,9 +237,12 @@ class SellItemApp:
         def checkout():
             item_name = item_name_entry.get()
             item_quantity = int(item_quantity_entry.get())
+
+            # Fetch item price and remaining quantity after selling
             success, item_price, remaining_quantity = self.db_manager.sell_item(item_name, item_quantity)
+
             if success:
-                total_price = item_price * item_quantity
+                total_price = item_quantity * item_price
                 if remaining_quantity is not None:
                     message = f"Item Name: {item_name:<20} Price per Item: {item_price:<15} Quantity: {item_quantity:<15} Total Price: {total_price:<15} Item Left: {remaining_quantity:<10}"
                 else:
