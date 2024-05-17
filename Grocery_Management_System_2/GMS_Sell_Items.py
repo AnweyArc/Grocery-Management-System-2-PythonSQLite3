@@ -67,6 +67,14 @@ class DatabaseManager:
             print("Error getting item by name:", e)
             return None
 
+    def search_item_by_name(self, item_name):
+        try:
+            self.cursor.execute("SELECT * FROM inventory WHERE name LIKE ?", ('%' + item_name + '%',))
+            return self.cursor.fetchall()
+        except sqlite3.Error as e:
+            print("Error searching item by name:", e)
+            return []
+
     def save_sale(self, items_bought, total_price):
         try:
             self.cursor.execute("INSERT INTO sales (items_bought, total_price) VALUES (?, ?)", (items_bought, total_price))
@@ -97,7 +105,7 @@ class DatabaseManager:
     def __del__(self):
         self.conn.close()
 
-
+#------------------------------------------------------------Main Window----------------------------------------------------
 class SellItemApp:
     def __init__(self, master, db_manager):
         self.master = master
@@ -120,10 +128,39 @@ class SellItemApp:
         self.show_stock_button = tk.Button(self.master, text="Show Stock", bg="#b5485d", fg="white", font=("Arial", 12, "bold"), command=self.show_stock)
         self.show_stock_button.pack(pady=10)
 
+        # Search bar
+        self.search_entry = tk.Entry(self.master, font=("Arial", 12))
+        self.search_entry.pack(pady=10)
+        self.search_entry.bind("<KeyRelease>", self.search_inventory)
+
         # Receipt listbox
         self.receipt_listbox = tk.Listbox(self.master, bg="#cabeaf", fg="black", font=("Arial", 12))
         self.receipt_listbox.pack(pady=20, padx=10, fill=tk.BOTH, expand=True)
 
+    def search_inventory(self, event):
+        search_term = self.search_entry.get()
+        if search_term:
+            results = self.db_manager.search_item_by_name(search_term)
+        else:
+            results = self.db_manager.view_inventory()
+
+        self.receipt_listbox.delete(0, tk.END)  # Clear previous items
+
+        # Add headers
+        self.receipt_listbox.insert(tk.END, "{:<20} {:<15} {:<15}".format("Item Name", "Item Price", "Quantity Left"))
+
+        for item in results:
+            item_name = item[1]
+            item_price = item[3]
+            item_quantity = item[2]
+            # Format each item to align properly in columns
+            item_str = "{:<20} {:<15} {:<15}".format(item_name, item_price, item_quantity)
+            self.receipt_listbox.insert(tk.END, item_str)
+
+        # Set column headers
+        self.receipt_listbox.itemconfig(0, {'bg': '#808080', 'fg': 'white'})
+
+#------------------------------------------------------------Sell Item Window----------------------------------------------------
     def sell_item_window(self):
         sell_window = tk.Toplevel(self.master)
         sell_window.title("Sell Item")
@@ -160,7 +197,7 @@ class SellItemApp:
             stocks_label.pack(pady=10)
 
             # Retrieve and display stocks
-            stocks = db_manager.view_inventory()
+            stocks = self.db_manager.view_inventory()  # Use self.db_manager instead of db_manager
             for stock in stocks:
                 stock_str = f"{stock[0]} - Quantity: {stock[2]}"
                 stock_label = tk.Label(stocks_window, text=stock_str, bg="#cabeaf", fg="black", font=("Arial", 12))
@@ -200,7 +237,6 @@ class SellItemApp:
         # Bill Out button
         bill_out_button = tk.Button(sell_window, text="Bill Out", bg="#b5485d", fg="white", font=("Arial", 12, "bold"), command=bill_out)
         bill_out_button.pack(pady=10)
-
 
     def show_receipt(self, items_bought, total_price):
         receipt_window = tk.Toplevel(self.master)
