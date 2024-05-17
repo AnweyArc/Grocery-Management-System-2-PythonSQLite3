@@ -133,9 +133,11 @@ class SellItemApp:
         self.search_entry.pack(pady=10)
         self.search_entry.bind("<KeyRelease>", self.search_inventory)
 
-        # Receipt listbox
-        self.receipt_listbox = tk.Listbox(self.master, bg="#cabeaf", fg="black", font=("Arial", 12))
-        self.receipt_listbox.pack(pady=20, padx=10, fill=tk.BOTH, expand=True)
+        self.receipt_treeview = ttk.Treeview(self.master, columns=("Item Name", "Item Price", "Quantity"), show="headings")
+        self.receipt_treeview.heading("Item Name", text="Item Name")
+        self.receipt_treeview.heading("Item Price", text="Item Price")
+        self.receipt_treeview.heading("Quantity", text="Quantity")
+        self.receipt_treeview.pack(pady=20, padx=10, fill=tk.BOTH, expand=True)
 
     def search_inventory(self, event):
         search_term = self.search_entry.get()
@@ -144,21 +146,15 @@ class SellItemApp:
         else:
             results = self.db_manager.view_inventory()
 
-        self.receipt_listbox.delete(0, tk.END)  # Clear previous items
-
-        # Add headers
-        self.receipt_listbox.insert(tk.END, "{:<20} {:<15} {:<15}".format("Item Name", "Item Price", "Quantity Left"))
+        self.receipt_treeview.delete(*self.receipt_treeview.get_children())  # Clear previous items
 
         for item in results:
-            item_name = item[0]
-            item_price = item[1]
+            # Display only the item name in the "Item Name" column
+            item_name = item[1]
+            item_price = item[3]
             item_quantity = item[2]
-            # Format each item to align properly in columns
-            item_str = "{:<20} {:<15} {:<15}".format(item_name, item_price, item_quantity)
-            self.receipt_listbox.insert(tk.END, item_str)
+            self.receipt_treeview.insert("", tk.END, values=(item_name, item_price, item_quantity))
 
-        # Set column headers
-        self.receipt_listbox.itemconfig(0, {'bg': '#808080', 'fg': 'white'})
 
 #------------------------------------------------------------Sell Item Window----------------------------------------------------
     def sell_item_window(self):
@@ -220,7 +216,7 @@ class SellItemApp:
 
                 # Insert new items into the tree
                 for item in results:
-                    tree.insert("", tk.END, values=(item[0], item[1], item[2]))
+                    tree.insert("", tk.END, values=(item[1], item[3], item[2]))
 
             search_entry.bind("<KeyRelease>", search_inventory)
 
@@ -320,16 +316,25 @@ class SellItemApp:
         finish_button.pack(pady=10)
 
     def show_stock(self):
-        self.receipt_listbox.delete(0, tk.END)  # Clear previous items
+        # Clear previous items
+        self.receipt_treeview.delete(*self.receipt_treeview.get_children())
 
         inventory_items = self.db_manager.view_inventory()
+
+        for item in inventory_items:
+            item_name = item[1]
+            item_price = item[3]
+            item_quantity = item[2]
+            # Insert each item into the treeview with correct values
+            self.receipt_treeview.insert("", tk.END, values=(item_name, item_price, item_quantity))
+
 
         # Add headers
         self.receipt_listbox.insert(tk.END, "{:<20} {:<15} {:<15}".format("Item Name", "Item Price", "Quantity Left"))
 
         for item in inventory_items:
-            item_name = item[0]
-            item_price = item[1]
+            item_name = item[1]
+            item_price = item[3]
             item_quantity = item[2]
             # Format each item to align properly in columns
             item_str = "{:<20} {:<15} {:<15}".format(item_name, item_price, item_quantity)
