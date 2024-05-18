@@ -116,6 +116,9 @@ class SellItemApp:
         # Fetch the latest sale ID from the database
         self.latest_sale_id = self.db_manager.get_latest_sale_id()
 
+        # Initialize total price variable
+        self.total_price = 0
+
         # Title label
         self.title_label = tk.Label(self.master, text="Sell Items", bg="#cabeaf", fg="black", font=("Arial", 20, "bold"))
         self.title_label.pack(pady=20)
@@ -155,8 +158,7 @@ class SellItemApp:
             item_quantity = item[2]
             self.receipt_treeview.insert("", tk.END, values=(item_name, item_price, item_quantity))
 
-
-#------------------------------------------------------------Sell Item Window----------------------------------------------------
+    #------------------------------------------------------------Sell Item Window----------------------------------------------------
     def sell_item_window(self):
         sell_window = tk.Toplevel(self.master)
         sell_window.title("Sell Item")
@@ -216,7 +218,10 @@ class SellItemApp:
 
                 # Insert new items into the tree
                 for item in results:
-                    tree.insert("", tk.END, values=(item[1], item[3], item[2]))
+                    item_name = item[1]
+                    item_price = item[3]
+                    item_quantity = item[2]
+                    tree.insert("", tk.END, values=(item_name, item_price, item_quantity))
 
             search_entry.bind("<KeyRelease>", search_inventory)
 
@@ -239,6 +244,7 @@ class SellItemApp:
 
             if success:
                 total_price = item_quantity * item_price
+                self.total_price += total_price  # Update the total price
                 if remaining_quantity is not None:
                     message = f"Item Name: {item_name:<20} Price per Item: {item_price:<15} Quantity: {item_quantity:<15} Total Price: {total_price:<15} Item Left: {remaining_quantity:<10}"
                 else:
@@ -253,7 +259,7 @@ class SellItemApp:
 
         def bill_out():
             items_bought = self.checkout_result_listbox.get(0, tk.END)
-            total_price = sum(float(item.split(":")[-1].split(",")[0].strip()) for item in items_bought)
+            total_price = self.total_price  # Use the instance variable total price
             self.db_manager.save_sale("\n".join(items_bought), total_price)
             self.show_receipt(items_bought, total_price)
 
@@ -322,26 +328,11 @@ class SellItemApp:
         inventory_items = self.db_manager.view_inventory()
 
         for item in inventory_items:
-            item_name = item[1]
-            item_price = item[3]
+            item_name = item[0]
+            item_price = item[1]
             item_quantity = item[2]
             # Insert each item into the treeview with correct values
             self.receipt_treeview.insert("", tk.END, values=(item_name, item_price, item_quantity))
-
-
-        # Add headers
-        self.receipt_listbox.insert(tk.END, "{:<20} {:<15} {:<15}".format("Item Name", "Item Price", "Quantity Left"))
-
-        for item in inventory_items:
-            item_name = item[1]
-            item_price = item[3]
-            item_quantity = item[2]
-            # Format each item to align properly in columns
-            item_str = "{:<20} {:<15} {:<15}".format(item_name, item_price, item_quantity)
-            self.receipt_listbox.insert(tk.END, item_str)
-
-        # Set column headers
-        self.receipt_listbox.itemconfig(0, {'bg': '#808080', 'fg': 'white'})
 
 def main():
     db_manager = DatabaseManager("grocery_database.db")
