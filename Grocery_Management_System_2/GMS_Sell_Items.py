@@ -69,7 +69,7 @@ class DatabaseManager:
 
     def search_item_by_name(self, item_name):
         try:
-            self.cursor.execute("SELECT * FROM inventory WHERE name LIKE ?", ('%' + item_name + '%',))
+            self.cursor.execute("SELECT name, price, quantity FROM inventory WHERE name LIKE ?", ('%' + item_name + '%',))
             return self.cursor.fetchall()
         except sqlite3.Error as e:
             print("Error searching item by name:", e)
@@ -152,9 +152,8 @@ class SellItemApp:
         self.receipt_treeview.delete(*self.receipt_treeview.get_children())  # Clear previous items
 
         for item in results:
-            # Display only the item name in the "Item Name" column
-            item_name = item[1]
-            item_price = item[3]
+            item_name = item[0]
+            item_price = item[1]
             item_quantity = item[2]
             self.receipt_treeview.insert("", tk.END, values=(item_name, item_price, item_quantity))
 
@@ -216,10 +215,9 @@ class SellItemApp:
                 for item in tree.get_children():
                     tree.delete(item)
 
-                # Insert new items into the tree
                 for item in results:
-                    item_name = item[1]
-                    item_price = item[3]
+                    item_name = item[0]
+                    item_price = item[1]
                     item_quantity = item[2]
                     tree.insert("", tk.END, values=(item_name, item_price, item_quantity))
 
