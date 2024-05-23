@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox
 import sqlite3
 
 class DatabaseManager:
@@ -12,7 +12,7 @@ class DatabaseManager:
         # Create tables for store inventory and store database
         self.cursor.execute("""CREATE TABLE IF NOT EXISTS inventory (
                                 id INTEGER PRIMARY KEY,
-                                name TEXT UNIQUE,
+                                name TEXT,
                                 quantity INTEGER,
                                 price REAL
                             )""")
@@ -30,7 +30,7 @@ class DatabaseManager:
                                 password TEXT
                             )""")
         self.conn.commit()
-
+        
     def search_item(self, item_name):
         try:
             self.cursor.execute("SELECT name, price, quantity FROM inventory WHERE name LIKE ?", ('%' + item_name + '%',))
@@ -39,6 +39,7 @@ class DatabaseManager:
             print("Error searching item:", e)
             return []
 
+    # Store Inventory methods
     def add_item(self, name, quantity, price):
         try:
             self.cursor.execute("SELECT id, quantity FROM inventory WHERE name=?", (name,))
@@ -122,20 +123,14 @@ class GroceryManagementSystem:
         self.item_prices_label = tk.Label(self.master, text="Item Prices", bg=self.bg_color, fg=self.text_color, font=("Arial", 12, "bold"))
         self.item_prices_label.place(x=730, y=190)
 
-        # SearchEntry1
+        #SearchEntry1
         self.item_prices_entry = tk.Entry(self.master, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
         self.item_prices_entry.place(x=704, y=220, width=140)
         self.item_prices_entry.bind("<KeyRelease>", self.search_items)
-
-        # Treeview1
-        self.item_prices_tree = ttk.Treeview(self.master, columns=("name", "price", "quantity"), show="headings")
-        self.item_prices_tree.heading("name", text="Item Name")
-        self.item_prices_tree.heading("price", text="Item Price")
-        self.item_prices_tree.heading("quantity", text="Quantity Left")
-        self.item_prices_tree.column("name", width=120)
-        self.item_prices_tree.column("price", width=100)
-        self.item_prices_tree.column("quantity", width=80)
-        self.item_prices_tree.place(x=580, y=250, width=380, height=200)
+        
+        #Listbox1
+        self.item_prices_listbox = tk.Listbox(self.master, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
+        self.item_prices_listbox.place(x=580, y=250, width=380, height=200)
 
         self.current_window = None
 
@@ -170,155 +165,246 @@ class GroceryManagementSystem:
         self.search_entry = tk.Entry(inventory_window, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
         self.search_entry.place(x=50, y=350, width=130)
         self.search_entry.bind("<KeyRelease>", self.search_items)
-
-        # Treeview2
-        self.info_tree = ttk.Treeview(inventory_window, columns=("name", "price", "quantity"), show="headings")
-        self.info_tree.heading("name", text="Item Name")
-        self.info_tree.heading("price", text="Item Price")
-        self.info_tree.heading("quantity", text="Quantity Left")
-        self.info_tree.column("name", width=200)
-        self.info_tree.column("price", width=150)
-        self.info_tree.column("quantity", width=150)
-        self.info_tree.place(x=280, y=100, width=600, height=400)
+        
+        # Listbox2
+        self.info_listbox = tk.Listbox(inventory_window, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
+        self.info_listbox.place(x=280, y=100, width=600, height=400)
 
         self.current_window = inventory_window
 
     def search_items(self, event=None):
         search_query = self.item_prices_entry.get()
-        for item in self.item_prices_tree.get_children():
-            self.item_prices_tree.delete(item)
+        self.item_prices_listbox.delete(0, tk.END)  # Clear previous items
 
         items = self.db_manager.search_item(search_query)
         if items:
+            self.item_prices_listbox.insert(tk.END, "{:<20} {:<15} {:<15}".format("Item Name", "Item Price", "Quantity Left"))
             for item in items:
-                self.item_prices_tree.insert("", tk.END, values=item)
+                item_str = "{:<20} {:<15} {:<15}".format(item[0], item[1], item[2])
+                self.item_prices_listbox.insert(tk.END, item_str)
 
-        # Connect search entry 2 to its respective Treeview
+        # Connect search entry 2 to its respective listbox
         if self.current_window:  # Check if inventory window is open
-            search_query_inventory = self.search_entry.get()
-            for item in self.info_tree.get_children():
-                self.info_tree.delete(item)
-
-            items_inventory = self.db_manager.search_item(search_query_inventory)
-            if items_inventory:
-                for item in items_inventory:
-                    self.info_tree.insert("", tk.END, values=item)
+            search_query_2 = self.search_entry.get()
+            if search_query_2:  # Check if the search query is not empty
+                items_2 = self.db_manager.search_item(search_query_2)
+                if items_2:
+                    self.info_listbox.delete(0, tk.END)  # Clear previous items
+                    self.info_listbox.insert(tk.END, "{:<20} {:<15} {:<15}".format("Item Name", "Item Price", "Quantity Left"))
+                    for item in items_2:
+                        item_str = "{:<20} {:<15} {:<15}".format(item[0], item[1], item[2])
+                        self.info_listbox.insert(tk.END, item_str)
+                else:
+                    self.info_listbox.delete(0, tk.END)  # Clear previous items
+                    self.info_listbox.insert(tk.END, "Item not found")
 
     def show_items(self):
-        for item in self.item_prices_tree.get_children():
-            self.item_prices_tree.delete(item)
-
-        items = self.db_manager.view_inventory()
-        for item in items:
-            self.item_prices_tree.insert("", tk.END, values=item)
+        # Fetch and display items in the item prices listbox
+        self.item_prices_listbox.delete(0, tk.END)  # Clear previous items
+        
+        inventory_items = self.db_manager.view_inventory()
+        
+        # Add headers
+        self.item_prices_listbox.insert(tk.END, "{:<20} {:<15} {:<15}".format("Item Name", "Item Price", "Quantity Left"))
+        
+        for item in inventory_items:
+            item_name = item[0]
+            item_price = item[1]
+            item_quantity = item[2]
+            # Format each item to align properly in columns
+            item_str = "{:<20} {:<15} {:<15}".format(item_name, item_price, item_quantity)
+            self.item_prices_listbox.insert(tk.END, item_str)
 
     def add_items(self):
-        add_window = tk.Toplevel(self.master)
-        add_window.title("Add Items")
-        add_window.geometry("300x300")
-        add_window.configure(bg=self.bg_color)
-
-        name_label = tk.Label(add_window, text="Item Name:", bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        name_label.place(x=10, y=20)
-        name_entry = tk.Entry(add_window, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        name_entry.place(x=120, y=20)
-
-        quantity_label = tk.Label(add_window, text="Quantity:", bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        quantity_label.place(x=10, y=60)
-        quantity_entry = tk.Entry(add_window, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        quantity_entry.place(x=120, y=60)
-
-        price_label = tk.Label(add_window, text="Price:", bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        price_label.place(x=10, y=100)
-        price_entry = tk.Entry(add_window, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        price_entry.place(x=120, y=100)
-
-        def add_item_to_db():
-            name = name_entry.get()
-            quantity = int(quantity_entry.get())
-            price = float(price_entry.get())
-            self.db_manager.add_item(name, quantity, price)
+        def add_new_item_to_database():
+            item_name = new_item_name_entry.get()
+            item_quantity = new_item_quantity_entry.get()
+            item_price = new_item_price_entry.get()
+            
+            # Check if any field is empty
+            if not item_name or not item_quantity or not item_price:
+                messagebox.showerror("Error", "No input! Please enter values!")
+                return
+            
+            try:
+                item_quantity = int(item_quantity)
+                item_price = float(item_price)
+            except ValueError:
+                messagebox.showerror("Error", "Invalid input! Quantity should be an integer and Price should be a number.")
+                return
+        
+            self.db_manager.add_item(item_name, item_quantity, item_price)
             add_window.destroy()
-            self.show_items()
+            # Ask if the user wants to add another item
+            if messagebox.askyesno("Add Another Item", "Do you want to add another item?"):
+                self.add_items()  # Recursively call add_items to add another item
 
-        add_button = tk.Button(add_window, text="Add", bg=self.button_color, fg=self.text_color_white, font=("Arial", 10), command=add_item_to_db)
-        add_button.place(x=120, y=140)
+        add_window = tk.Toplevel(self.master)
+        add_window.title("Add Item")
+
+        new_item_frame = tk.LabelFrame(add_window, text="Add New Item")
+        new_item_frame.grid(row=0, column=0, padx=10, pady=5, sticky="ew")
+
+        new_item_name_label = tk.Label(new_item_frame, text="Item Name:")
+        new_item_name_label.grid(row=0, column=0, padx=10, pady=5, sticky="e")
+        new_item_name_entry = tk.Entry(new_item_frame)
+        new_item_name_entry.grid(row=0, column=1, padx=10, pady=5)
+
+        new_item_quantity_label = tk.Label(new_item_frame, text="Item Quantity:")
+        new_item_quantity_label.grid(row=1, column=0, padx=10, pady=5, sticky="e")
+        new_item_quantity_entry = tk.Entry(new_item_frame)
+        new_item_quantity_entry.grid(row=1, column=1, padx=10, pady=5)
+
+        new_item_price_label = tk.Label(new_item_frame, text="Price/Item:")
+        new_item_price_label.grid(row=2, column=0, padx=10, pady=5, sticky="e")
+        new_item_price_entry = tk.Entry(new_item_frame)
+        new_item_price_entry.grid(row=2, column=1, padx=10, pady=5)
+
+        add_new_item_button = tk.Button(new_item_frame, text="Add New Item", command=add_new_item_to_database)
+        add_new_item_button.grid(row=3, column=0, columnspan=2, pady=10)
+
+        existing_item_frame = tk.LabelFrame(add_window, text="Add Existing Item")
+        existing_item_frame.grid(row=1, column=0, padx=10, pady=5, sticky="ew")
+
+        existing_item_name_label = tk.Label(existing_item_frame, text="Item Name:")
+        existing_item_name_label.grid(row=0, column=0, padx=10, pady=5, sticky="e")
+        existing_item_name_entry = tk.Entry(existing_item_frame)
+        existing_item_name_entry.grid(row=0, column=1, padx=10, pady=5)
+
+        existing_item_quantity_label = tk.Label(existing_item_frame, text="Item Quantity:")
+        existing_item_quantity_label.grid(row=1, column=0, padx=10, pady=5, sticky="e")
+        existing_item_quantity_entry = tk.Entry(existing_item_frame)
+        existing_item_quantity_entry.grid(row=1, column=1, padx=10, pady=5)
+
+        def add_existing_item_to_database():
+            item_name = existing_item_name_entry.get()
+            item_quantity = existing_item_quantity_entry.get()
+
+            # Check if any field is empty
+            if not item_name or not item_quantity:
+                messagebox.showerror("Error", "No input! Please enter values!")
+                return
+            
+            try:
+                item_quantity = int(item_quantity)
+            except ValueError:
+                messagebox.showerror("Error", "Invalid input! Quantity should be an integer.")
+                return
+
+            item = self.db_manager.get_item_by_name(item_name)
+            if item:
+                current_quantity = item[2]
+                new_quantity = current_quantity + item_quantity
+                self.db_manager.edit_item(item[0], item[1], new_quantity, item[3])
+                add_window.destroy()
+                self.view_inventory()
+            else:
+                messagebox.showerror("Item Not Found", "The item does not exist in the database.")
+
+        add_existing_item_button = tk.Button(existing_item_frame, text="Add Existing Item", command=add_existing_item_to_database)
+        add_existing_item_button.grid(row=2, column=0, columnspan=2, pady=10)
 
     def delete_item_window(self):
         delete_window = tk.Toplevel(self.master)
-        delete_window.title("Delete an Item")
-        delete_window.geometry("300x200")
-        delete_window.configure(bg=self.bg_color)
+        delete_window.title("Delete Item")
 
-        name_label = tk.Label(delete_window, text="Item Name:", bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        name_label.place(x=10, y=20)
-        name_entry = tk.Entry(delete_window, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        name_entry.place(x=120, y=20)
+        delete_item_frame = tk.LabelFrame(delete_window, text="Delete Item")
+        delete_item_frame.grid(row=0, column=0, padx=10, pady=5, sticky="ew")
 
-        def delete_item_from_db():
-            name = name_entry.get()
-            self.db_manager.delete_item(name)
+        delete_item_name_label = tk.Label(delete_item_frame, text="Item Name:")
+        delete_item_name_label.grid(row=0, column=0, padx=10, pady=5, sticky="e")
+        delete_item_name_entry = tk.Entry(delete_item_frame)
+        delete_item_name_entry.grid(row=0, column=1, padx=10, pady=5)
+
+        def delete_item_from_database():
+            item_name = delete_item_name_entry.get()
+            self.db_manager.delete_item(item_name)
             delete_window.destroy()
-            self.show_items()
+            self.view_inventory()
 
-        delete_button = tk.Button(delete_window, text="Delete", bg=self.button_color, fg=self.text_color_white, font=("Arial", 10), command=delete_item_from_db)
-        delete_button.place(x=120, y=60)
+        delete_item_button = tk.Button(delete_item_frame, text="Delete Item", command=delete_item_from_database)
+        delete_item_button.grid(row=1, column=0, columnspan=2, pady=10)
 
     def edit_items(self):
         edit_window = tk.Toplevel(self.master)
-        edit_window.title("Edit Items")
-        edit_window.geometry("300x300")
-        edit_window.configure(bg=self.bg_color)
+        edit_window.title("Edit Item")
 
-        id_label = tk.Label(edit_window, text="Item ID:", bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        id_label.place(x=10, y=20)
-        id_entry = tk.Entry(edit_window, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        id_entry.place(x=120, y=20)
+        item_name_label = tk.Label(edit_window, text="Item Name:")
+        item_name_label.grid(row=0, column=0, padx=10, pady=5, sticky="e")
+        item_name_entry = tk.Entry(edit_window)
+        item_name_entry.grid(row=0, column=1, padx=10, pady=5)
 
-        name_label = tk.Label(edit_window, text="New Name:", bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        name_label.place(x=10, y=60)
-        name_entry = tk.Entry(edit_window, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        name_entry.place(x=120, y=60)
+        new_name_label = tk.Label(edit_window, text="New Item Name:")
+        new_name_label.grid(row=1, column=0, padx=10, pady=5, sticky="e")
+        new_name_entry = tk.Entry(edit_window)
+        new_name_entry.grid(row=1, column=1, padx=10, pady=5)
 
-        quantity_label = tk.Label(edit_window, text="New Quantity:", bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        quantity_label.place(x=10, y=100)
-        quantity_entry = tk.Entry(edit_window, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        quantity_entry.place(x=120, y=100)
+        new_quantity_label = tk.Label(edit_window, text="New Quantity:")
+        new_quantity_label.grid(row=2, column=0, padx=10, pady=5, sticky="e")
+        new_quantity_entry = tk.Entry(edit_window)
+        new_quantity_entry.grid(row=2, column=1, padx=10, pady=5)
 
-        price_label = tk.Label(edit_window, text="New Price:", bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        price_label.place(x=10, y=140)
-        price_entry = tk.Entry(edit_window, bg=self.bg_color, fg=self.text_color, font=("Arial", 10))
-        price_entry.place(x=120, y=140)
+        new_price_label = tk.Label(edit_window, text="New Price/Item:")
+        new_price_label.grid(row=3, column=0, padx=10, pady=5, sticky="e")
+        new_price_entry = tk.Entry(edit_window)
+        new_price_entry.grid(row=3, column=1, padx=10, pady=5)
 
-        def edit_item_in_db():
-            item_id = int(id_entry.get())
-            name = name_entry.get()
-            quantity = int(quantity_entry.get())
-            price = float(price_entry.get())
-            self.db_manager.edit_item(item_id, name, quantity, price)
-            edit_window.destroy()
-            self.show_items()
+        def update_item_in_database():
+            item_name = item_name_entry.get()
+            new_name = new_name_entry.get()
+            new_quantity = new_quantity_entry.get()
+            new_price = new_price_entry.get()
 
-        edit_button = tk.Button(edit_window, text="Edit", bg=self.button_color, fg=self.text_color_white, font=("Arial", 10), command=edit_item_in_db)
-        edit_button.place(x=120, y=180)
+            # Check if any field is empty
+            if not item_name or not new_name or not new_quantity or not new_price:
+                messagebox.showerror("Error", "No input! Please enter values!")
+                return
+            
+            try:
+                new_quantity = int(new_quantity)
+                new_price = float(new_price)
+            except ValueError:
+                messagebox.showerror("Error", "Invalid input! Quantity should be an integer and Price should be a number.")
+                return
 
-    def view_inventory(self):
-        for item in self.info_tree.get_children():
-            self.info_tree.delete(item)
+            item = self.db_manager.get_item_by_name(item_name)
+            if item:
+                self.db_manager.edit_item(item[0], new_name, new_quantity, new_price)
+                edit_window.destroy()
+                self.view_inventory()
+            else:
+                messagebox.showerror("Item Not Found", "The item does not exist in the database.")
 
-        items = self.db_manager.view_inventory()
-        for item in items:
-            self.info_tree.insert("", tk.END, values=item)
+        edit_item_button = tk.Button(edit_window, text="Edit Item", command=update_item_in_database)
+        edit_item_button.grid(row=4, column=0, columnspan=2, pady=10)
 
     def confirm_clear_inventory(self):
-        confirm_clear = messagebox.askyesno("Confirm Clear", "Are you sure you want to clear the inventory?")
-        if confirm_clear:
+        response = messagebox.askyesno("Confirm", "Do you want to clear the entire inventory?")
+        if response:
             self.db_manager.clear_inventory()
             self.view_inventory()
 
+    def view_inventory(self):
+        inventory_items = self.db_manager.view_inventory()
+        self.info_listbox.delete(0, tk.END)  # Clear previous items
+
+        if inventory_items:
+            self.info_listbox.insert(tk.END, "{:<20} {:<15} {:<15}".format("Item Name", "Item Price", "Quantity Left"))
+            for item in inventory_items:
+                item_name = item[0]
+                item_price = item[1]
+                item_quantity = item[2]
+                item_str = "{:<20} {:<15} {:<15}".format(item_name, item_price, item_quantity)
+                self.info_listbox.insert(tk.END, item_str)
+        else:
+            self.info_listbox.insert(tk.END, "Inventory is empty")
+
+
+def main():
+    root = tk.Tk()
+    app = GroceryManagementSystem(root)
+    root.state('zoomed')
+    root.mainloop()
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    root.state('zoomed')
-    app = GroceryManagementSystem(root)
-    root.mainloop()
+    main()
