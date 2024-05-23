@@ -42,8 +42,15 @@ class DatabaseManager:
     # Store Inventory methods
     def add_item(self, name, quantity, price):
         try:
-            self.cursor.execute("INSERT INTO inventory (name, quantity, price) VALUES (?, ?, ?)",
-                                (name, quantity, price))
+            self.cursor.execute("SELECT id, quantity FROM inventory WHERE name=?", (name,))
+            result = self.cursor.fetchone()
+            if result:
+                current_id, current_quantity = result
+                new_quantity = current_quantity + quantity
+                self.cursor.execute("UPDATE inventory SET quantity=? WHERE id=?", (new_quantity, current_id))
+            else:
+                self.cursor.execute("INSERT INTO inventory (name, quantity, price) VALUES (?, ?, ?)",
+                                    (name, quantity, price))
             self.conn.commit()
         except sqlite3.Error as e:
             print("Error adding item to inventory:", e)
